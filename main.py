@@ -5,10 +5,15 @@ import networkx as nx
 
 """
 Usage:
+    python3 ./main.py --complete --max 6 --outdir DIR
     python3 ./main.py --small --max 6 --outdir DIR
     python3 ./main.py --udg --dim 100 --num 200 --max-seed 10 --outdir DIR
     python3 ./main.py --random --prob 0.5 --num 200 --max-seed 10 --outdir DIR
 """
+
+def generate_complete_graphs(max_size):
+    return [nx.complete_graph(n) for n in range(2, max_size + 1)] 
+
 
 def generate_small_graphs(max_size):
     return [g for g in nx.graph_atlas_g()[1:]
@@ -49,6 +54,8 @@ if __name__=="__main__":
                 description="Simulate desynchronization algorithms.")
     
     type_group = parser.add_mutually_exclusive_group(required=True)
+    type_group.add_argument("--complete", action="store_true",
+                            help="Flag to generate complete graphs")
     type_group.add_argument("--small", action="store_true",
                             help="Flag to generate small connected graphs")
     type_group.add_argument("--udg", action="store_true",
@@ -58,15 +65,15 @@ if __name__=="__main__":
 
     parser.add_argument("--outdir", required=True,
                        help="Output directory")
-    # small graph attributes
-    parser.add_argument("--max", type=int,
-                       help="Number of maximum nodes in small graphs")
     # geometric graph attributes
     parser.add_argument("--dim", type=int,
                        help="Size of the grid for UDG placement")
     # random graph attributes
     parser.add_argument("--prob", type=float,
                        help="Link probability for Erdos-Renyi graphs") 
+    # deterministically generated graphs
+    parser.add_argument("--max", type=int,
+                       help="Maximum number of nodes for complete/small")
     # randomly generated graphs
     parser.add_argument("--num", type=int,
                        help="Number of nodes for randomly generated graphs")
@@ -86,7 +93,9 @@ if __name__=="__main__":
     if args.random and (None in [args.prob, args.num, args.max_seed]):
         parser.error("--random requires --prob, --num, --max-seed.")
 
-    if args.small:
+    if args.complete:
+        graph_list = generate_complete_graphs(args.max)
+    elif args.small:
         graph_list = generate_small_graphs(args.max)
     elif args.udg: 
         graph_list = generate_udg_graphs(dim, num, max_seed)
