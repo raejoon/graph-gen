@@ -36,7 +36,7 @@ def generate_binomial_graphs(prob, num, max_seed):
     return graph_list
 
 
-def save_graph_list(graph_list, outdir):
+def save_graph_list(graph_list, parameters, outdir):
     for i, g in enumerate(graph_list):
         graph_file = os.path.join(outdir, "%d.txt" % i)
         nx.write_adjlist(g, graph_file)
@@ -45,6 +45,10 @@ def save_graph_list(graph_list, outdir):
     index_list = [str(i) for i in range(len(graph_list))]
     with open(index_file, "w") as fo:
         fo.write("\n".join(index_list))
+
+    params_file = os.path.join(outdir, "parameters.txt")
+    with open(params_file, "w") as fo:
+        fo.write(parameters)
 
     print("%d graphs saved in ./%s" % (len(graph_list), outdir))
      
@@ -103,4 +107,5 @@ if __name__=="__main__":
         graph_list = generate_binomial_graphs(args.prob, args.num, 
                                               args.max_seed)
     
-    save_graph_list(graph_list, args.outdir)
+    parameters = " ".join(sys.argv[1:])
+    save_graph_list(graph_list, parameters, args.outdir)
