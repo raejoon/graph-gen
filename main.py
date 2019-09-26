@@ -8,7 +8,7 @@ Usage:
     python3 ./main.py --complete --max 6 --outdir DIR
     python3 ./main.py --small --max 6 --outdir DIR
     python3 ./main.py --udg --dim 100 --num 200 --max-seed 10 --outdir DIR
-    python3 ./main.py --random --prob 0.5 --num 200 --max-seed 10 --outdir DIR
+    python3 ./main.py --binomial --prob 0.5 --num 200 --max-seed 10 --outdir DIR
 """
 
 def generate_complete_graphs(max_size):
@@ -24,15 +24,15 @@ def generate_udg_graphs(dim, num, max_seed):
     graph_list = [None for _ in range(max_seed + 1)]
     for seed in range(max_seed + 1):
         graph = nx.random_geometric_graph(num, 1, dim=dim, seed=seed)
-        graph_list[seed] = graph_list
+        graph_list[seed] = graph
     return graph_list
         
         
-def generate_random_graphs(prob, num, max_seed):
+def generate_binomial_graphs(prob, num, max_seed):
     graph_list = [None for _ in range(max_seed + 1)]
     for seed in range(max_seed + 1):
         graph = nx.gnp_random_graph(num, prob, seed=seed)
-        graph_list[seed] = graph_list
+        graph_list[seed] = graph
     return graph_list
 
 
@@ -60,7 +60,7 @@ if __name__=="__main__":
                             help="Flag to generate small connected graphs")
     type_group.add_argument("--udg", action="store_true",
                             help="Flag to generate geomteric graphs")
-    type_group.add_argument("--random", action="store_true",
+    type_group.add_argument("--binomial", action="store_true",
                             help="Flag to generate Erdos-Renyi graph")
 
     parser.add_argument("--outdir", required=True,
@@ -90,7 +90,7 @@ if __name__=="__main__":
         parser.error("--small requires --max.") 
     if args.udg and (None in [args.dim, args.num, args.max_seed]):
         parser.error("--udg requires --dim, --num, and --max-seed.")
-    if args.random and (None in [args.prob, args.num, args.max_seed]):
+    if args.binomial and (None in [args.prob, args.num, args.max_seed]):
         parser.error("--random requires --prob, --num, --max-seed.")
 
     if args.complete:
@@ -98,8 +98,9 @@ if __name__=="__main__":
     elif args.small:
         graph_list = generate_small_graphs(args.max)
     elif args.udg: 
-        graph_list = generate_udg_graphs(dim, num, max_seed)
-    elif args.random:
-        graph_list = generate_random_graphs(prob, num, max_seed)
+        graph_list = generate_udg_graphs(args.dim, args.num, args.max_seed)
+    elif args.binomial:
+        graph_list = generate_binomial_graphs(args.prob, args.num, 
+                                              args.max_seed)
     
     save_graph_list(graph_list, args.outdir)
