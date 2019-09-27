@@ -2,7 +2,11 @@ import argparse
 import os, sys
 import random
 import itertools
+import multiprocessing as mp
 import networkx as nx
+import pqueue as pq
+import sleepwell
+from constants import INTERVAL
 
 """
 Usage:
@@ -11,38 +15,57 @@ Usage:
     ./main.py --graph FILE1 --seed INTEGER --algo STRING --outdir DIR
 """
 
+SIMULATION_DURATION = 50 * INTERVAL 
+
 def save_parameters(parameters, outdir):
     params_file = os.path.join(outdir, "parameters.txt")
     with open(params_file, "w") as fo:
         fo.write(parameters + "\n")
 
 
-def test_single_graph(graph_file, seed, algorithm, output_file):
+def test_instance(graph_file, seed, algorithm, output_file):
     graph = nx.read_adjlist(graph_file)
     graph = nx.convert_node_labels_to_integers(graph, ordering="sorted")
 
-    #random.seed(seed)
+    random.seed(seed)
 
-    #if algorithm == "sleepwell":
-    #    Node = sleepwell.Sleepwell
+    if algorithm == "sleepwell":
+        Node = sleepwell.SleepWellNode
 
-    #queue = PriorityQueue()
-    #num_nodes = len(graph)
-    #offset_list = [random.randint(0, INTERVAL - 1) for _ in range(num_nodes)]
-    #node_list = [Node(i, offset_list[i], queue) for i in range(num_nodes)]
+    queue = pq.PriorityQueue()
+    num_nodes = len(graph)
+    offset_list = [random.randint(0, INTERVAL - 1) for _ in range(num_nodes)]
+    node_list = [Node(i, queue) for i in range(num_nodes)]
 
-    #for i, node in enumerate(node_list):
-    #    node.set_neighbors([node_list[j] for j in graph.neighbors(i)])
-    #
-    #while queue.current < SIMULATION_DURATION:
-    #    func, argv = queue.pop_task()
-    #    func(*argv)
+    for i, node in enumerate(node_list):
+        node.set_links([node_list[j] for j in graph.neighbors(i)])
+        queue.add_task((node.start, (None,)), offset_list[i])
+    
+    while queue.current < SIMULATION_DURATION:
+        func, argv = queue.pop_task()
+        func(*argv)
+    
+    log = []
+    for i, node in enumerate(node_list):
+        log += [(t,i,"broadcast","none") for t in node.broadcasts]
+        log += [(t,i,"deficit",str(d)) for t, d in node.deficits]
+    log = sorted(log)
+    log = ["%d,%d,%s,%s" % tup for tup in log]
 
     with open(output_file, "w") as fo:
-        fo.write("hello!\n");
+        fo.write("\n".join(log) + "\n")
+
+    print("Log saved in ./%s." % output_file)
 
 
-def test_multiple_graphs(graph_dir, seed_list, algorithm, outdir):
+def test_single_graph(graph_file, seed_list, algorithm, outdir):
+    for seed in seed_list:
+        output_file = "seed-%d.txt" % seed
+        output_file = os.path.join(outdir, output_file)
+        test_instance(graph_file, seed, algorithm, output_file)
+
+
+def test_multiple_graphs_serial(graph_dir, seed_list, algorithm, outdir):
     index_file = os.path.join(graph_dir, "index.txt")
     with open(index_file) as fo:
         indices = [int(line) for line in fo]
@@ -52,8 +75,26 @@ def test_multiple_graphs(graph_dir, seed_list, algorithm, outdir):
         for seed in seed_list:
             output_file = "graph-%d-seed-%d.txt" % (graph_id, seed)
             output_file = os.path.join(outdir, output_file)
-            test_single_graph(graph_file, seed, algorithm, output_file)
+            test_instance(graph_file, seed, algorithm, output_file)
 
+
+def test_multiple_graphs(graph_dir, seed_list, algorithm, outdir):
+    index_file = os.path.join(graph_dir, "index.txt")
+    with open(index_file) as fo:
+        indices = [int(line) for line in fo]
+    
+    results = []
+    with mp.Pool(processes=8) as pool:
+        for graph_id in indices:
+            graph_file = os.path.join(graph_dir, str(graph_id) + ".txt")
+            for seed in seed_list:
+                output_file = "graph-%d-seed-%d.txt" % (graph_id, seed)
+                output_file = os.path.join(outdir, output_file)
+                args = (graph_file, seed, algorithm, output_file,)
+                results.append(pool.apply_async(test_instance, args))
+        
+        for res in results:
+            res.wait()
 
 
 if __name__ == "__main__":
@@ -84,6 +125,11 @@ if __name__ == "__main__":
     if os.listdir(args.outdir): 
         parser.error("./%s is not empty." % args.outdir)
 
+    if args.graph is not None and not os.path.isfile(args.graph):
+        parser.error("./%s is not a regular file." % args.graph)
+    elif args.graph_dir is not None and not os.path.isdir(args.graph_dir):
+        parser.error("./%s is not a directory." % args.graph)
+
     parameters = " ".join(sys.argv[1:])
     save_parameters(parameters, args.outdir)
 
@@ -97,4 +143,6 @@ if __name__ == "__main__":
         test_multiple_graphs(args.graph_dir, seed_list, args.algo, args.outdir)
     else:
         test_single_graph(args.graph, seed_list, args.algo, args.outdir)
+            
+
     
