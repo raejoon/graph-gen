@@ -47,6 +47,7 @@ def test_instance(graph_file, seed, algorithm, output_file):
     
     log = []
     for i, node in enumerate(node_list):
+        log += [(0,i,"init","none")]
         log += [(t,i,"broadcast","none") for t in node.broadcasts]
         log += [(t,i,"deficit",str(d)) for t, d in node.deficits]
     log = sorted(log)
