@@ -1,0 +1,9 @@
+#./main.py --complete --max 6 --outdir ../samples/graphs/
+# GMT Fri Sep 27 02:36:59 2019
+# 
+0 1 2 3 4 5
+1 2 3 4 5
+2 3 4 5
+3 4 5
+4 5
+5
