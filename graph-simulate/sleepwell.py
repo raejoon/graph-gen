@@ -44,8 +44,10 @@ class SleepWellNode(object):
 
     def close_slot(self):
         now = self.now()
+        target_share = self.target_share()
         my_share = now - self.broadcasts[-1]
-        self.deficits.append((now, self.target_share() - my_share))
+        deficit = (target_share - my_share) / target_share
+        self.deficits.append((now, deficit))
         self.my_slot = False
 
     
