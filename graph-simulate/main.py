@@ -59,23 +59,35 @@ def test_instance(graph_file, seed, algorithm, output_file):
 
 
 def test_single_graph(graph_file, seed_list, algorithm, outdir):
-    for seed in seed_list:
-        output_file = "seed-%d.txt" % seed
-        output_file = os.path.join(outdir, output_file)
+    file_list = [None for _ in range(len(seed_list))]
+    for i, seed in enumerate(seed_list):
+        file_list[i] = "seed-%d.txt" % seed
+        output_file = os.path.join(outdir, file_list[i])
         test_instance(graph_file, seed, algorithm, output_file)
+    
+    index_file = os.path.join(outdir, "index.txt")
+    with open(index_file, "w") as fo:
+        fo.write("\n".join(file_list) + "\n")
 
 
 def test_multiple_graphs_serial(graph_dir, seed_list, algorithm, outdir):
-    index_file = os.path.join(graph_dir, "index.txt")
-    with open(index_file) as fo:
+    in_index_file = os.path.join(graph_dir, "index.txt")
+    with open(in_index_file) as fo:
         indices = [int(line) for line in fo]
-
+    
+    file_list = [None for _ in range(len(indices) * len(seed_list))]
+    cnt = 0
     for graph_id in indices:
         graph_file = os.path.join(graph_dir, str(graph_id) + ".txt")
         for seed in seed_list:
-            output_file = "graph-%d-seed-%d.txt" % (graph_id, seed)
-            output_file = os.path.join(outdir, output_file)
+            file_list[cnt] = "graph-%d-seed-%d.txt" % (graph_id, seed)
+            output_file = os.path.join(outdir, file_list[cnt])
             test_instance(graph_file, seed, algorithm, output_file)
+            cnt += 1
+    
+    out_index_file = os.path.join(outdir, "index.txt")
+    with open(out_index_file, "w") as fo:
+        fo.write("\n".join(file_list) + "\n")
 
 
 def test_multiple_graphs(graph_dir, seed_list, algorithm, outdir):
@@ -85,16 +97,23 @@ def test_multiple_graphs(graph_dir, seed_list, algorithm, outdir):
     
     results = []
     with mp.Pool(processes=8) as pool:
+        file_list = [None for _ in range(len(indices) * len(seed_list))]
+        cnt = 0
         for graph_id in indices:
             graph_file = os.path.join(graph_dir, str(graph_id) + ".txt")
             for seed in seed_list:
-                output_file = "graph-%d-seed-%d.txt" % (graph_id, seed)
-                output_file = os.path.join(outdir, output_file)
+                file_list[cnt] = "graph-%d-seed-%d.txt" % (graph_id, seed)
+                output_file = os.path.join(outdir, file_list[cnt])
                 args = (graph_file, seed, algorithm, output_file,)
                 results.append(pool.apply_async(test_instance, args))
+                cnt += 1
         
         for res in results:
             res.wait()
+
+    out_index_file = os.path.join(outdir, "index.txt")
+    with open(out_index_file, "w") as fo:
+        fo.write("\n".join(file_list) + "\n")
 
 
 if __name__ == "__main__":
