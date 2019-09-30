@@ -16,8 +16,8 @@ def generate_complete_graphs(max_size):
 
 
 def generate_small_graphs(max_size):
-    return [g for g in nx.graph_atlas_g()[1:]
-                if len(g) <= max_size and nx.is_connected(g)]
+    return [g for g in nx.graph_atlas_g()
+                if len(g) > 1 and len(g) <= max_size and nx.is_connected(g)]
 
 
 def generate_udg_graphs(dim, num, max_seed):
