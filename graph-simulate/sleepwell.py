@@ -106,10 +106,6 @@ class SleepWellNode(object):
         if my_share - target_share > -1e-3 * INTERVAL:
             return INTERVAL
 
-        self.log.append((now, self.node_id, "nmap", str(nmap_offsets)))
-        self.log.append((now, self.node_id, "short", str((target_share -
-            my_share) / INTERVAL)))
-
         self.deficit_count += 1
         if self.deficit_count == MAX_DEFICIT_COUNT:
             new_offset = random.randint(0, INTERVAL - 1)
@@ -127,7 +123,6 @@ class SleepWellNode(object):
         if interval <= INTERVAL // 2:
             interval += INTERVAL
 
-        self.log.append((now, self.node_id, "adjustment", str(new_offset)))
         return interval
 
 
