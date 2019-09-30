@@ -6,7 +6,7 @@ import multiprocessing as mp
 import networkx as nx
 import pqueue as pq
 import sleepwell
-from constants import INTERVAL
+from constants import INTERVAL, SIMULATION_DURATION
 
 """
 Usage:
@@ -15,7 +15,6 @@ Usage:
     ./main.py --graph FILE1 --seed INTEGER --algo STRING --outdir DIR
 """
 
-SIMULATION_DURATION = 50 * INTERVAL 
 
 def save_parameters(parameters, outdir):
     params_file = os.path.join(outdir, "parameters.txt")
@@ -47,9 +46,7 @@ def test_instance(graph_file, seed, algorithm, output_file):
     
     log = []
     for i, node in enumerate(node_list):
-        log += [(0,i,"init","none")]
-        log += [(t,i,"broadcast","none") for t in node.broadcasts]
-        log += [(t,i,"deficit",str(d)) for t, d in node.deficits]
+        log += node.log
     log = sorted(log)
     log = ["%d,%d,%s,%s" % tup for tup in log]
 
@@ -110,7 +107,7 @@ def test_multiple_graphs(graph_dir, seed_list, algorithm, outdir):
                 cnt += 1
         
         for res in results:
-            res.wait()
+            res.get()
 
     out_index_file = os.path.join(outdir, "index.txt")
     with open(out_index_file, "w") as fo:
