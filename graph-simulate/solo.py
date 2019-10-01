@@ -116,5 +116,3 @@ class SoloNode(object):
 
     def target_share(self):
         return INTERVAL // (len(self.neighbor_map) + 1)
-    def target_share(self):
-        return INTERVAL // (len(self.neighbor_map) + 1)
