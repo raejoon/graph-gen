@@ -5,7 +5,7 @@ import itertools
 import multiprocessing as mp
 import networkx as nx
 import pqueue as pq
-import sleepwell
+import sleepwell, solo
 from constants import INTERVAL, SIMULATION_DURATION
 
 """
@@ -30,6 +30,8 @@ def test_instance(graph_file, seed, algorithm, output_file):
 
     if algorithm == "sleepwell":
         Node = sleepwell.SleepWellNode
+    elif algorithm == "solo":
+        Node = solo.SoloNode
 
     queue = pq.PriorityQueue()
     num_nodes = len(graph)
@@ -132,7 +134,7 @@ if __name__ == "__main__":
     parser.add_argument("--outdir", required=True,
                         help="output directory")
 
-    parser.add_argument("--algo", required=True, choices=["sleepwell"],
+    parser.add_argument("--algo", required=True, choices=["sleepwell", "solo"],
                         help="string indicating the algorithm")
 
     args = parser.parse_args()
