@@ -10,8 +10,19 @@ Usage:
 
 import argparse
 import os
+import multiprocessing as mp
 import numpy as np
 from constants import INTERVAL, SIMULATION_DURATION
+
+
+def calculate_for_multiple_logs(logfile_list, func):
+    results = []
+    with mp.Pool(processes=8) as pool:
+        for logfile in logfile_list:
+            results.append(pool.apply_async(func, (logfile,)))
+    
+        return [res.get() for res in results]
+    
 
 def examine_min_broadcast_count(logfile):
     broadcasts = {}
@@ -41,10 +52,14 @@ def examine_converge_time(logfile):
     
     max_time = float("-inf")
     for node_id in broadcasts:
+        if broadcasts[node_id][-1] < SIMULATION_DURATION - INTERVAL:
+            return float("inf")
+
         error = np.abs(np.diff(broadcasts[node_id]) - INTERVAL) / INTERVAL
         for ind in range(len(error) - 1, -1, -1):
             if error[ind] > 1e-6:
                 break
+       
         converge_time = broadcasts[node_id][ind + 1]
         if ind == len(error) - 1:
             converge_time = float("inf")
@@ -109,7 +124,8 @@ if __name__ == "__main__":
         data = [examine_min_broadcast_count(f) for f in filepath_list]
 
     if args.converge_time:
-        data = [examine_converge_time(f) for f in filepath_list]
+        data = calculate_for_multiple_logs(filepath_list,
+                                           examine_converge_time)
 
     if args.deficit and args.transient:
         data = [examine_transient_deficit(f) for f in filepath_list]
