@@ -12,7 +12,8 @@ from constants import INTERVAL, SIMULATION_DURATION
 Usage:
     ./main.py --graph-dir DIR --seed-list FILE --algo STRING --outdir DIR
     ./main.py --graph-dir DIR --seed INTEGER --algo STRING --outdir DIR
-    ./main.py --graph FILE1 --seed INTEGER --algo STRING --outdir DIR
+    ./main.py --graph FILE1 --seed INTEGER --algo STRING --outdir DIR \
+            --alpha 0.5
 """
 
 
@@ -28,12 +29,14 @@ def test_instance(graph_file, seed, algorithm, output_file):
 
     random.seed(seed)
 
-    if algorithm == "sleepwell":
+    if algorithm["type"] == "sleepwell":
         Node = sleepwell.SleepWellNode
-    elif algorithm == "solo":
+    elif algorithm["type"] == "solo":
         Node = solo.SoloNode
-    elif algorithm == "solo2":
+        solo.ALPHA = algorithm["alpha"]
+    elif algorithm["type"] == "solo2":
         Node = solo2.SoloNode
+        solo2.ALPHA = algorithm["alpha"]
 
     queue = pq.PriorityQueue()
     num_nodes = len(graph)
@@ -135,22 +138,31 @@ if __name__ == "__main__":
 
     parser.add_argument("--outdir", required=True,
                         help="output directory")
-
     parser.add_argument("--algo", required=True, 
                         choices=["sleepwell", "solo", "solo2"],
                         help="string indicating the algorithm")
+    parser.add_argument("--alpha", type=int,
+                        help="alpha parameter for solo, solo2 (0 < a < 100)")
 
     args = parser.parse_args()
-
+    
+    args.outdir = os.path.normpath(args.outdir)
     if not os.path.isdir(args.outdir):
-        parser.error("./%s does not exist." % args.outdir) 
+        parser.error("%s does not exist." % args.outdir) 
     if os.listdir(args.outdir): 
-        parser.error("./%s is not empty." % args.outdir)
+        parser.error("%s is not empty." % args.outdir)
 
     if args.graph is not None and not os.path.isfile(args.graph):
         parser.error("./%s is not a regular file." % args.graph)
     elif args.graph_dir is not None and not os.path.isdir(args.graph_dir):
         parser.error("./%s is not a directory." % args.graph)
+
+    if args.algo in ["solo", "solo2"] and args.alpha is None:
+        parser.error("%s needs --alpha." % args.algo)
+    elif args.algo == "sleepwell" and args.alpha is not None:
+        parser.error("%s does not need an --alpha." % args.algo)
+    elif args.alpha <= 0 or args.alpha >= 100:
+        parser.error("--alpha should be greater than 0 and less than 100")
 
     parameters = " ".join(sys.argv[1:])
     save_parameters(parameters, args.outdir)
@@ -161,10 +173,14 @@ if __name__ == "__main__":
     else:
         seed_list = [args.seed]
 
+    algo = {"type": args.algo}
+    if args.alpha is not None:
+        algo["alpha"] = args.alpha
+
     if args.graph_dir is not None:
-        test_multiple_graphs(args.graph_dir, seed_list, args.algo, args.outdir)
+        test_multiple_graphs(args.graph_dir, seed_list, algo, args.outdir)
     else:
-        test_single_graph(args.graph, seed_list, args.algo, args.outdir)
+        test_single_graph(args.graph, seed_list, algo, args.outdir)
             
 
     
