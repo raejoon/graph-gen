@@ -3,10 +3,10 @@
 import os
 import matplotlib.pyplot as plt
 
-plt.rc("font", size=14)
+plt.rc("font", size=18)
 
 scale = 0.6
-plt.figure(figsize=(16*scale, 9*scale))
+plt.figure(figsize=(16*scale, 6*scale))
 
 ls = ["--", "-"]
 
