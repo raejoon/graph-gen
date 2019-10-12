@@ -6,6 +6,7 @@ Usage:
     python analyze.py --logdir DIR --converge-time --outfile FILE
     python analyze.py --logdir DIR --converge-time --cdf
     python analyze.py --logdir DIR --deficit --transient --outfile FILE
+    python analyze.py --logdir DIR --deficit --last --outfile FILE
 """
 
 import argparse
@@ -15,7 +16,7 @@ import numpy as np
 from constants import INTERVAL, SIMULATION_DURATION
 
 
-def calculate_for_multiple_logs(logfile_list, func):
+def process_multiple_logs(logfile_list, func):
     results = []
     with mp.Pool(processes=8) as pool:
         for logfile in logfile_list:
@@ -69,6 +70,21 @@ def examine_converge_time(logfile):
     return max_time
 
 
+def examine_last_deficit(logfile):
+    deficits = {}
+    with open(logfile) as fo:
+        for line in fo:
+            if "init" in line:
+                node_id = int(line.split(",")[1])
+                deficits[node_id] = None
+            elif "deficit" in line:
+                values = line.split(",") 
+                node_id = int(values[1])
+                deficit = float(values[3])
+                deficits[node_id] = deficit
+    return max(deficits.values())
+
+
 def examine_transient_deficit(logfile):
     pass
 
@@ -107,16 +123,21 @@ if __name__ == "__main__":
     
     parser.add_argument("--transient", action="store_true",
                         help="Collect deficits only in transient phase")
+    parser.add_argument("--last", action="store_true",
+                        help="Collect maximum among deficits " +
+                             "last reported by each node.")
     
     args = parser.parse_args()
     if args.converge_time is None and args.cdf is not None:
         parser.error("--cdf is only used with --converge-time.")
     if args.deficit is None and args.transient is not None:
         parser.error("--transient is only used with --deficit.")
-    if args.deficit is not None and args.transient is None:
-        parser.error("--deficit requires --transient.")
     if not os.path.isdir(args.logdir):
         parser.error("./%s does not exist." % args.logdir)
+
+    if args.deficit is not None and \
+            (args.transient is None and args.last is None):
+        parser.error("--deficit requires --transient or --last.")
 
     filepath_list = read_file_list(args.logdir)
    
@@ -124,11 +145,13 @@ if __name__ == "__main__":
         data = [examine_min_broadcast_count(f) for f in filepath_list]
 
     if args.converge_time:
-        data = calculate_for_multiple_logs(filepath_list,
-                                           examine_converge_time)
+        data = process_multiple_logs(filepath_list, examine_converge_time)
 
     if args.deficit and args.transient:
         data = [examine_transient_deficit(f) for f in filepath_list]
+
+    if args.deficit and args.last:
+        data = process_multiple_logs(filepath_list, examine_last_deficit)
     
     if args.cdf:
         bins, cdfs = calculate_cdf(data, 0, SIMULATION_DURATION, 20)
