@@ -164,7 +164,7 @@ if __name__ == "__main__":
     if args.algo in ["solo", "solo2", "desync"] and args.alpha is None:
         parser.error("%s needs --alpha." % args.algo)
     elif args.algo == "sleepwell" and args.alpha is not None:
-        parser.error("%s does not need an --alpha." % args.algo)
+        print("--alpha is ignored with --algo %s" % args.algo)
     elif args.alpha <= 0 or args.alpha >= 100:
         parser.error("--alpha should be greater than 0 and less than 100")
 
