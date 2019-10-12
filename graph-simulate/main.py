@@ -5,7 +5,7 @@ import itertools
 import multiprocessing as mp
 import networkx as nx
 import pqueue as pq
-import sleepwell, solo, solo2
+import sleepwell, solo, solo2, desync
 from constants import INTERVAL, SIMULATION_DURATION
 
 """
@@ -37,6 +37,9 @@ def test_instance(graph_file, seed, algorithm, output_file):
     elif algorithm["type"] == "solo2":
         Node = solo2.SoloNode
         solo2.ALPHA = algorithm["alpha"]
+    elif algorithm["type"] == "desync":
+        Node = desync.DesyncNode
+        desync.ALPHA = algorithm["alpha"]
 
     queue = pq.PriorityQueue()
     num_nodes = len(graph)
@@ -139,10 +142,11 @@ if __name__ == "__main__":
     parser.add_argument("--outdir", required=True,
                         help="output directory")
     parser.add_argument("--algo", required=True, 
-                        choices=["sleepwell", "solo", "solo2"],
+                        choices=["sleepwell", "solo", "solo2", "desync"],
                         help="string indicating the algorithm")
     parser.add_argument("--alpha", type=int,
-                        help="alpha parameter for solo, solo2 (0 < a < 100)")
+                        help="alpha parameter for solo, solo2, desync " +
+                             "(0 < a < 100)")
 
     args = parser.parse_args()
     
@@ -157,7 +161,7 @@ if __name__ == "__main__":
     elif args.graph_dir is not None and not os.path.isdir(args.graph_dir):
         parser.error("./%s is not a directory." % args.graph)
 
-    if args.algo in ["solo", "solo2"] and args.alpha is None:
+    if args.algo in ["solo", "solo2", "desync"] and args.alpha is None:
         parser.error("%s needs --alpha." % args.algo)
     elif args.algo == "sleepwell" and args.alpha is not None:
         parser.error("%s does not need an --alpha." % args.algo)
