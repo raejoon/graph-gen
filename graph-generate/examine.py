@@ -3,11 +3,12 @@ import argparse
 import os
 import numpy as np
 import networkx as nx
+import multiprocessing as mp
 
 """
 Usage:
     python examine.py --graph-dir DIR --diameter --max-deg --min-deg
-    python examine.py --graph-dir DIR --max-deg --median-deg
+    python examine.py --graph-dir DIR --max-deg --median-deg --parallel 4
 """
 def print_parameters(graph_dir):
     param_file = os.path.join(graph_dir, "parameters.txt")
@@ -34,29 +35,28 @@ def separate_connected_components(graph_list):
     return new_list 
 
 
-def examine_diameters(graph_list):
-    return [nx.diameter(graph) for graph in graph_list]
+def diameter(graph):
+    return nx.diameter(graph)
 
 
-def examine_max_degrees(graph_list):
-    data = []
-    for graph in graph_list:
-        data.append(max([tup[1] for tup in graph.degree()]))
-    return data
+def max_degree(graph):
+    return max([tup[1] for tup in graph.degree()])
 
 
-def examine_min_degrees(graph_list):
-    data = []
-    for graph in graph_list:
-        data.append(min([tup[1] for tup in graph.degree()]))
-    return data
+def min_degree(graph):
+    return min([tup[1] for tup in graph.degree()])
 
 
-def examine_median_degrees(graph_list):
-    data = []
-    for graph in graph_list:
-        data.append(np.median([tup[1] for tup in graph.degree()]))
-    return data
+def median_degree(graph):
+    return np.median([tup[1] for tup in graph.degree()])
+
+
+def examine_stats(func, graph_list, nproc):
+    if nproc == 1:
+        return [func(graph) for graph in graph_list]
+    
+    with mp.Pool(processes=nproc) as pool:
+        return pool.map(func, graph_list)    
 
 
 def print_stats(name, data):
@@ -76,6 +76,8 @@ if __name__=="__main__":
                         help="Flag to report minimum degree of each graph")
     parser.add_argument("--median-deg", action="store_true",
                         help="Flag to report median-degree of each graph")
+    parser.add_argument("--parallel", type=int, default=1,
+                        help="Number of processes to use. (default: 1)")
     
     args = parser.parse_args()
     if not os.path.isdir(args.graph_dir):
@@ -91,14 +93,15 @@ if __name__=="__main__":
     
     print_parameters(args.graph_dir)
     if args.diameter:
-        diameters = examine_diameters(graph_list)
+        diameters = examine_stats(diameter, graph_list, args.parallel)
         print_stats("Diameter", diameters)
     if args.max_deg:
-        max_degrees = examine_max_degrees(graph_list)
+        max_degrees = examine_stats(max_degree, graph_list, args.parallel)
         print_stats("Maximum Degree", max_degrees)
     if args.median_deg:
-        median_degrees = examine_median_degrees(graph_list)
+        median_degrees = \
+            examine_stats(median_degree, graph_list, args.parallel)
         print_stats("Median Degree", median_degrees)
     if args.min_deg:
-        min_degrees = examine_min_degrees(graph_list)
+        min_degrees = examine_stats(min_degree, graph_list, args.parallel)
         print_stats("Minimum Degree", min_degrees)
