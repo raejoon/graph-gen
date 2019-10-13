@@ -2,6 +2,7 @@ import sys, argparse
 import os
 import numpy as np
 import networkx as nx
+import multiprocessing as mp
 
 """
 Usage:
@@ -37,13 +38,51 @@ def generate_udg_graphs(dim, num, max_seed):
         graph = nx.random_geometric_graph(num, 1, dim=dim, seed=seed)
         graph_list[seed] = graph
     return graph_list
-        
+
+
+def generate_udg_graph(dim, num, seed):
+    return nx.random_geometric_graph(num, 1, dim=dim, seed=seed)
+
+
+def generate_udg_graphs_parallel(dim, num, max_seed):
+    graph_list = [None for _ in range(max_seed + 1)]
+    results = []
+    with mp.Pool(processes=8) as pool:
+        for seed in range(max_seed + 1):
+            func = generate_udg_graph
+            args = (dim, num, seed,)
+            results.append(pool.apply_async(func, args))
+
+        for seed in range(max_seed + 1):
+            graph_list[seed] = results[seed].get()
+
+    return graph_list
+
         
 def generate_binomial_graphs(prob, num, max_seed):
     graph_list = [None for _ in range(max_seed + 1)]
     for seed in range(max_seed + 1):
         graph = nx.gnp_random_graph(num, prob, seed=seed)
         graph_list[seed] = graph
+    return graph_list
+
+
+def generate_binomial_graph(prob, num, seed):
+    return nx.gnp.random_graph(num, prob, seed=seed)
+
+
+def generate_binomial_graphs_parallel(prob, num, max_seed):
+    graph_list = [None for _ in range(max_seed + 1)]
+    results = []
+    with mp.Pool(processes=8) as pool:
+        for seed in range(max_seed + 1):
+            func = generate_binomial_graph
+            args = (num, prob, seed,)
+            results.append(pool.apply_async(func, args))
+
+        for seed in range(max_seed + 1):
+            graph_list[seed] = results[seed].get()
+
     return graph_list
 
 
@@ -98,10 +137,11 @@ if __name__=="__main__":
                         help="Max seed value for randomly generated graphs")
 
     args = parser.parse_args()
+    args.outdir = os.path.normpath(args.outdir)
     if not os.path.isdir(args.outdir):
-        parser.error("./%s does not exist." % args.outdir)
+        parser.error("%s does not exist." % args.outdir)
     if os.listdir(args.outdir):
-        parser.error("./%s is not empty." % args.outdir)
+        parser.error("%s is not empty." % args.outdir)
     
     if args.small and (args.max is None):
         parser.error("--small requires --max.") 
@@ -117,10 +157,11 @@ if __name__=="__main__":
     elif args.small:
         graph_list = generate_small_graphs(args.max)
     elif args.udg: 
-        graph_list = generate_udg_graphs(args.dim, args.num, args.max_seed)
+        graph_list = generate_udg_graphs_parallel(args.dim, args.num, 
+                                                  args.max_seed)
     elif args.binomial:
-        graph_list = generate_binomial_graphs(args.prob, args.num, 
-                                              args.max_seed)
+        graph_list = generate_binomial_graphs_parallel(args.prob, args.num, 
+                                                       args.max_seed)
     
     parameters = " ".join(sys.argv[1:])
     save_graph_list(graph_list, parameters, args.outdir)
