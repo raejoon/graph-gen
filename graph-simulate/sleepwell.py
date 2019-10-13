@@ -99,6 +99,9 @@ class SleepWellNode(object):
         now = self.now()
         my_offset = now % INTERVAL
 
+        if len(self.neighbor_map) == 0:
+            return INTERVAL
+
         nmap_offsets = self.neighbor_map.values()
         my_share = min([self.diff(o, my_offset) for o in nmap_offsets])
         target_share = self.target_share()
