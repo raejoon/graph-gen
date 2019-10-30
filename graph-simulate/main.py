@@ -6,6 +6,7 @@ import multiprocessing as mp
 import networkx as nx
 import pqueue as pq
 import sleepwell, solo, solo2, desync
+import graph as graphutils
 from constants import INTERVAL, SIMULATION_DURATION
 
 """
@@ -25,7 +26,7 @@ def save_parameters(parameters, outdir):
 
 def test_instance(graph_file, seed, algorithm, output_file):
     graph = nx.read_adjlist(graph_file)
-    graph = nx.convert_node_labels_to_integers(graph, ordering="sorted")
+    graph = graphutils.convert_nodes_to_integers(graph)
 
     random.seed(seed)
 
