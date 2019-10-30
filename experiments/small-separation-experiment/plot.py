@@ -28,7 +28,7 @@ def get_meaningful_deficits(algo_name):
         for line in fo:
             row = line.rstrip().split()
             log = row[0]
-            deficit = float(row[1])
+            deficit = float(row[1]) * 100
             if log not in blacklist:
                 deficits.append(deficit) 
 
@@ -67,7 +67,7 @@ for i, algo in enumerate(algorithms):
              label=labels[i])
 
 plt.legend(loc="upper left")
-plt.xlabel("Maximum relative deficit after convergence")
+plt.xlabel("Maximum deficit among nodes after convergence (%)")
 plt.ylabel("CDF")
 plt.ylim(0, 1)
 plt.tight_layout()
