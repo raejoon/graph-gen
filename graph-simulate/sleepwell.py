@@ -1,7 +1,7 @@
 import random
 from constants import INTERVAL
 
-MAX_DEFICIT_COUNT = 100
+MAX_DEFICIT_COUNT = 200
 JITTER = 10
 
 class SleepWellNode(object):
@@ -66,11 +66,11 @@ class SleepWellNode(object):
             task = (neighbor.recv_callback, (self.node_id,))
             self.pq.add_task(task, now)
          
-        self.latest_broadcast = now
         self.log.append((now, self.node_id, "broadcast", "None"))
         if self.my_slot:
             self.close_slot()
         self.my_slot = True
+        self.latest_broadcast = now
 
 
     def recv_callback(self, src):

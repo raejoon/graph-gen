@@ -66,11 +66,11 @@ class SoloNode(object):
             task = (neighbor.recv_callback, (self.node_id, degree))
             self.pq.add_task(task, now)
          
-        self.latest_broadcast = now
         self.log.append((now, self.node_id, "broadcast", "None"))
         if self.my_slot:
             self.close_slot()
         self.my_slot = True
+        self.latest_broadcast = now
 
 
     def recv_callback(self, src, deg):
