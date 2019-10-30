@@ -23,7 +23,22 @@ def process_multiple_logs(logfile_list, func):
             results.append(pool.apply_async(func, (logfile,)))
     
         return [res.get() for res in results]
-    
+
+
+def examine_final_offsets(logfile):
+    offsets = {}
+    with open(logfile) as fo:
+        for line in fo:
+            if "init" in line:
+                node_id = int(line.split(",")[1])
+                offsets[node_id] = None
+            elif "broadcast" in line:
+                values = line.split(",")
+                timestamp = int(values[0])
+                node_id = int(values[1])
+                offsets[node_id] = timestamp % INTERVAL
+    return offsets
+
 
 def examine_min_broadcast_count(logfile):
     broadcasts = {}
@@ -56,9 +71,9 @@ def examine_converge_time(logfile):
         if broadcasts[node_id][-1] < SIMULATION_DURATION - INTERVAL:
             return float("inf")
 
-        error = np.abs(np.diff(broadcasts[node_id]) - INTERVAL) / INTERVAL
+        error = np.abs(np.diff(broadcasts[node_id]) - INTERVAL)
         for ind in range(len(error) - 1, -1, -1):
-            if error[ind] > 1e-6:
+            if error[ind] > 1e-6 * INTERVAL:
                 break
        
         converge_time = broadcasts[node_id][ind + 1]
@@ -66,7 +81,6 @@ def examine_converge_time(logfile):
             converge_time = float("inf")
         if max_time < converge_time:
             max_time = converge_time
-    
     return max_time
 
 
@@ -128,12 +142,14 @@ if __name__ == "__main__":
                              "last reported by each node.")
     
     args = parser.parse_args()
+    args.logdir = os.path.normpath(args.logdir)
+
     if args.converge_time is None and args.cdf is not None:
         parser.error("--cdf is only used with --converge-time.")
     if args.deficit is None and args.transient is not None:
         parser.error("--transient is only used with --deficit.")
     if not os.path.isdir(args.logdir):
-        parser.error("./%s does not exist." % args.logdir)
+        parser.error("%s does not exist." % args.logdir)
 
     if args.deficit is not None and \
             (args.transient is None and args.last is None):
@@ -145,7 +161,9 @@ if __name__ == "__main__":
         data = [examine_min_broadcast_count(f) for f in filepath_list]
 
     if args.converge_time:
+        #data = [examine_converge_time(f) for f in filepath_list]
         data = process_multiple_logs(filepath_list, examine_converge_time)
+        print(max(data))
 
     if args.deficit and args.transient:
         data = [examine_transient_deficit(f) for f in filepath_list]
