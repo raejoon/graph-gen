@@ -68,11 +68,11 @@ class DesyncNode(object):
             task = (neighbor.recv_callback, (self.node_id,))
             self.pq.add_task(task, now)
         
-        self.latest_broadcast = now
         self.log.append((now, self.node_id, "broadcast", "None"))
         if self.fired:
             self.close_slot()
         self.fired = True
+        self.latest_broadcast = now
 
 
     def recv_callback(self, src):
@@ -90,8 +90,10 @@ class DesyncNode(object):
             self.log.append((now, self.node_id, "adjust", adjustment/INTERVAL))
             self.set_timer(self.next_broadcast + adjustment - now) 
         else:
-            self.prev = self.next_broadcast - now
-            assert(self.prev > 0)
+            my_offset = self.next_broadcast % INTERVAL
+            your_offset = now % INTERVAL
+            self.prev = (my_offset + INTERVAL - your_offset) % INTERVAL
+            #self.prev = self.next_broadcast - now
 
 
     def timer_callback(self, aux):
