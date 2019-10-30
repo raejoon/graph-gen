@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-ROOT_DIR=../../
+ROOT_DIR=../../../
 GRAPH_DIR=./graphs/
 LOG_DIR=./logs/
 ANALYSIS_DIR=./analysis/

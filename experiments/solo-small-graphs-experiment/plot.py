@@ -2,13 +2,15 @@
 
 import os
 import matplotlib.pyplot as plt
+import numpy as np
 
 plt.rc("font", size=18)
 
 scale = 0.6
 plt.figure(figsize=(16*scale, 6*scale))
 
-ls = ["--", "-"]
+color = ["grey", "red"]
+ls = ["-", "-"]
 
 for i, algo in enumerate(["solo", "solo2"]):
     cdf_file = "analysis/%s-cdf" % algo
@@ -22,9 +24,9 @@ for i, algo in enumerate(["solo", "solo2"]):
             values.append(float(value_str))
     bins = [0] + bins
     values = [0] + values
-    
-    label="PCO with degree-based separation" if algo == "solo" else "Solo"
-    plt.plot(bins, values, linestyle=ls[i], linewidth=3, color="grey",
+
+    label="PCO with degree-based separation" if algo == "solo" else "Fidget"
+    plt.plot(bins, values, linestyle=ls[i], linewidth=3, color=color[i],
              label=label)
 
 
