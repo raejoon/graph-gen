@@ -35,6 +35,14 @@ def separate_connected_components(graph_list):
     return new_list 
 
 
+def connected_count(graph):
+    return len(list(nx.connected_components(graph)))
+
+
+def size(graph):
+    return len(graph)
+
+
 def diameter(graph):
     return nx.diameter(graph)
 
@@ -70,6 +78,12 @@ if __name__=="__main__":
                         help="Output directory")
     parser.add_argument("--diameter", action="store_true",
                         help="Flag to report diameter of each graph")
+    parser.add_argument("--connected-count", action="store_true",
+                        help="Flag to report number of " +
+                             "connected components of each graph.")
+    parser.add_argument("--connected-size", action="store_true",
+                        help="Flag to report size of " +
+                             "each connected component.")
     parser.add_argument("--max-deg", action="store_true",
                         help="Flag to report maximum degree of each graph")
     parser.add_argument("--min-deg", action="store_true",
@@ -83,25 +97,33 @@ if __name__=="__main__":
     if not os.path.isdir(args.graph_dir):
         parser.error("./%s does not exist." % args.graph_dir)
     
-    flags = [args.diameter, args.max_deg, args.min_deg, args.median_deg]
+    flags = [args.diameter, args.connected_count, args.connected_size, 
+             args.max_deg, args.min_deg, args.median_deg]
     if not any(flags):
-        parser.error("Require at least one from --diameter, --max-deg, "
-                     + "--min-deg, --median-deg")
+        parser.error("Require at least one from --diameter, " +
+                     "--connected-count, --connected-size, " +
+                     "--max-deg, --min-deg, --median-deg")
 
     graph_list = load_graph_list(args.graph_dir)
-    graph_list = separate_connected_components(graph_list)
+    subgraph_list = separate_connected_components(graph_list)
     
     print_parameters(args.graph_dir)
     if args.diameter:
-        diameters = examine_stats(diameter, graph_list, args.parallel)
+        diameters = examine_stats(diameter, subgraph_list, args.parallel)
         print_stats("Diameter", diameters)
+    if args.connected_count:
+        counts = examine_stats(connected_count, graph_list, args.parallel)
+        print_stats("Connected Count", counts)
+    if args.connected_size:
+        sizes = examine_stats(size, subgraph_list, args.parallel)
+        print_stats("Connected Size", sizes)
     if args.max_deg:
-        max_degrees = examine_stats(max_degree, graph_list, args.parallel)
+        max_degrees = examine_stats(max_degree, subgraph_list, args.parallel)
         print_stats("Maximum Degree", max_degrees)
     if args.median_deg:
         median_degrees = \
-            examine_stats(median_degree, graph_list, args.parallel)
+            examine_stats(median_degree, subgraph_list, args.parallel)
         print_stats("Median Degree", median_degrees)
     if args.min_deg:
-        min_degrees = examine_stats(min_degree, graph_list, args.parallel)
+        min_degrees = examine_stats(min_degree, subgraph_list, args.parallel)
         print_stats("Minimum Degree", min_degrees)
