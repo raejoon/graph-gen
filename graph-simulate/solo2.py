@@ -40,6 +40,8 @@ class SoloNode(object):
         self.log = []
         self.log.append((0, self.node_id, "init", "None"))
 
+        self.random = random.Random(node_id)
+
 
     def set_links(self, node_list):
         self.links = set(node_list)
@@ -74,11 +76,11 @@ class SoloNode(object):
             self.pq.add_task(task, now)
 
         self.path_vector = [] 
-        self.latest_broadcast = now
         self.log.append((now, self.node_id, "broadcast", "None"))
         if self.my_slot:
             self.close_slot()
         self.my_slot = True
+        self.latest_broadcast = now
 
 
     def recv_callback(self, src, deg, pv_str):
@@ -102,7 +104,7 @@ class SoloNode(object):
 
     def set_timer(self, interval):
         self.timer_task = (self.timer_callback, (None,))
-        interval += random.randint(-JITTER, JITTER)
+        interval += self.random.randint(-JITTER, JITTER)
         self.pq.add_task(self.timer_task, self.now() + interval)
 
 
@@ -121,7 +123,7 @@ class SoloNode(object):
                 self.log.append((now, self.node_id, "reset", "None"))
                 self.on = False
                 self.pq.remove_task(self.timer_task)
-                reset_time = now + random.randint(0, INTERVAL - 1)
+                reset_time = now + self.random.randint(0, INTERVAL - 1)
                 self.pq.add_task((self.start, (None,)), reset_time)
                 return
             else:
