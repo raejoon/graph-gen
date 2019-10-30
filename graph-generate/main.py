@@ -132,7 +132,7 @@ if __name__=="__main__":
         parser.error("--binomial requires --prob, --num, --max-seed.")
     if args.small and args.powers:
         parser.error("--powers cannot be used with --small.")
-    if any([args.small, args.complete]) and args.parallel is not None:
+    if any([args.small, args.complete]) and args.parallel > 1:
         print("--parallel is ignored with --complete or --small")
 
     if args.complete:
